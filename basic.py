@@ -1,5 +1,3 @@
-import queue
-import collections
 import cmd
 
 #This basic application accept commads via cmd module to simulate actions performed by a real device
@@ -21,9 +19,9 @@ class Call():
 #this function delvier a call to the first operator avaliable
 def deliver_call(call):
     operator = operatorStack.pop()
+    call.set_operator(operator)
     operatorDict[operator]= "ringing"
     call.set_state("ringing")
-    call.set_operator(operator)
     callDict[operator] = call
     print("Call "+str(call.id)+" ringing for operator "+str(operator))
 
@@ -40,7 +38,7 @@ class Cmd(cmd.Cmd):
         if not len(operatorStack):
             print("Call "+str(call.id)+" wainting in queue")
             call.set_state("waiting")
-            callQueue.put(call)
+            callQueue.append(call)
         else:
             deliver_call(call)
 
@@ -54,29 +52,41 @@ class Cmd(cmd.Cmd):
         
     def do_reject(self,arg):
         param = arg.split()
-        operator.set_state("available")
-        operatorDeque.append(operator)
+        operator = param[0]
+        call = callDict[operator]
+        operatorDict[operator]="available"
+        operatorStack.append(operator)
         call.set_state("rejected")
-        print("Call "+str(call.id)+" rejected by operator "+str(operator.id))
+        print("Call "+str(call.id)+" rejected by operator "+str(operator))
+        if not operatorStack == []:
+            deliver_call(call)
         
     def do_hangup(self,arg):
         param = arg.split()
         call=calls[param[0]]
         operator=call.operator
-        print("Call "+str(call.id)+" finished and operator "+str(operator)+" available")
-        operatorDict[operator]="available"
-        operatorStack.append(operator)
-        calls[call.id] = None
-        if not callQueue.empty():
-            deliver_call(callQueue.get())
-        
-
+        if call.state == "ringing" or call.state == "waiting":
+            if call.state == "waiting":
+                callQueue.remove(call)
+            if call.state == "ringing":
+                operatorDict[operator]= "available"
+                operatorStack.append(operator)
+            print("Call "+str(call.id)+" missed")
+        else:
+            print("Call "+str(call.id)+" finished and operator "+str(operator)+" available")
+            operatorDict[operator]="available"
+            operatorStack.append(operator)
+            calls[call.id] = None
+        if not callQueue == []:
+            call = callQueue[0]
+            callQueue.remove(call)
+            deliver_call(call)
 
 
 operatorDict = {"A": "available", "B": "available"}
 callDict = {}
 calls = {}
-callQueue = queue.Queue()
+callQueue = []
 operatorStack = []
 operatorStack.append("B")
 operatorStack.append("A")
