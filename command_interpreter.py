@@ -15,22 +15,22 @@ class Command(Cmd):
 
     def do_call(self, arg):
         call_id = arg.split()[0]
-        request = ("{'command': 'call', 'id': "+call_id+"}")
+        request = ('{"command": "call", "id": '+call_id+'}')
         reactor.callFromThread(on_main_thread,request)
 
     def do_answer(self, arg):
         operator = arg.split()[0]
-        request = ("{'command': 'answer', 'id': "+operator+"}")
+        request = ('{"command": "answer", "id": '+'"'+operator+'"'+'}')
         reactor.callFromThread(on_main_thread,request)
 
     def do_reject(self, arg):
         operator = arg.split()[0]
-        request = ("{'command': 'reject', 'id': "+operator+"}")
+        request = ('{"command": "reject", "id": '+'"'+operator+'"'++'}')
         reactor.callFromThread(on_main_thread,request)
 
     def do_hangup(self, arg):
         call=arg.split()[0]
-        request = ("{'command': 'hangup', 'id': "+call+"}")
+        request = ('{"command": "hangup", "id": '+call+'}')
         reactor.callFromThread(on_main_thread,request)
 
 class EchoClientProtocol(Protocol):

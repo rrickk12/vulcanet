@@ -27,9 +27,9 @@ def deliver_call(call):
 class EchoServerProtocol(Protocol):
     def dataReceived(self, data):
         log.msg('Data received {}'.format(data))
-        dataJSON = json.dump(data)
-        if dataJSON['command'] == 'call':
-            call = Call(dataJSON['id'])
+        dataJSON = json.loads(data.decode())
+        if dataJSON["command"] == 'call':
+            call = Call(int(dataJSON['id']))
             calls[call.id]=call
             log.msg("Call "+str(call.id)+" recieved")
             #if there is no operator available
@@ -39,14 +39,14 @@ class EchoServerProtocol(Protocol):
                 callQueue.append(call)
             else:
                 deliver_call(call)
-        elif dataJSON['command'] == 'answer':
+        elif dataJSON["command"] == 'answer':
             operator = dataJSON['id']
             operatorDict[operator]="busy"
             call = callDict[operator]
             call.set_state("awnsered")
             log.msg("Call "+str(call.id)+" answered by operator "+str(operator))
 
-        elif dataJSON['command'] == 'reject':
+        elif dataJSON["command"] == 'reject':
             operator = dataJSON['id']
             call = callDict[operator]
             operatorDict[operator]="available"
@@ -56,7 +56,7 @@ class EchoServerProtocol(Protocol):
             if not operatorStack == []:
                 deliver_call(call)
 
-        elif dataJSON['command'] == 'hangup':
+        elif dataJSON["command"] == 'hangup':
             call=calls[dataJSON['id']]
             operator=call.operator
             if call.state == "ringing" or call.state == "waiting":
@@ -88,21 +88,19 @@ class EchoServerFactory(ServerFactory):
     def buildProtocol(self, addr):
         return EchoServerProtocol()
 
-def main():
-    operatorDict = {
-    "A": "available",
-    "B": "available"}
-    callDict = {}
-    calls = {}
-    callQueue = []
-    operatorStack = []
-    operatorStack.append("B")
-    operatorStack.append("A")
-    log.startLogging(sys.stdout)
-    log.msg('Start your engines...')
-    reactor.listenTCP(5678, EchoServerFactory())
-    reactor.run()
+
+operatorDict = {
+"A": "available",
+"B": "available"}
+callDict = {}
+calls = {}
+callQueue = []
+operatorStack = []
+operatorStack.append("B")
+operatorStack.append("A")
+log.startLogging(sys.stdout)
+log.msg('Start your engines...')
+reactor.listenTCP(5678, EchoServerFactory())
+reactor.run()
 
 
-if __name__ == '__main__':
-    main()
