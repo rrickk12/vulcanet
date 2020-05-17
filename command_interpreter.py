@@ -1,9 +1,9 @@
-from twisted.internet import reactor, protocol
-from twisted.internet import stdio
-from twisted.protocols import basic
-import cmd, json , sys
-
-
+import sys, cmd
+from twisted.python import log
+from twisted.internet import reactor, stdio
+from twisted.internet.protocol import ServerFactory, ClientFactory, Protocol
+from twisted.protocols.basic import LineReceiver
+from os import linesep
 
 class Cmd(cmd.Cmd):
 
@@ -27,50 +27,54 @@ class Cmd(cmd.Cmd):
         request = json.dumps({'command': 'hangup', 'id': call})
         return request
 
+class Echo(LineReceiver):
 
-class CommandInterpreter(protocol.Protocol):
-
-    def dataReceived(self, data):
-        print(data)
-        sys.stdout.write('>>> ')
-        sys.stdout.flush()
-
-    def sendRequest(self, request):
-        if request == 'exit':
-            self.transport.loseConnection()
-            return
-        self.transport.write(request)
-
-class CommandInterpreterFactory(protocol.ClientFactory):
-    def buildProtocol(self, addr):
-        global myCommandInterpreter
-        myCommandInterpreter = CommandInterpreter()
-        return myCommandInterpreter
-
-    def clientConnectionFailed(self, connector, reason):
-        print("Connection Failed "+str(reason))
-        reactor.stop()
-
-    def clientConnectionLost(self, connector, reason):
-        reactor.stop()
-
-class InputReader(basic.LineReceiver):
-    from os import linesep as delimiter
+    delimiter = linesep.encode("ascii")
 
     def connectionMade(self):
-        self.transport.write("connection Made")
+        self.transport.write(b'>>> ')
+
     def lineReceived(self, line):
-        print("line recived")
-        request = Cmd.onecmd(line)
-        if not request:
-            self.transport.write('>>> ')
-        if request:
-            myCommandInterpreter.sendRequest(request)
+        self.sendLine(b'Echo: ' + line)
+        self.transport.write(b'>>> ')
+
+class EchoClientProtocol(Protocol):
+    def dataReceived(self, data):
+        log.msg('Data received {}'.format(data))
+        self.transport.loseConnection()
+
+    def connectionMade(self):
+        data = 'Hello, Server!'
+        self.transport.write(data.encode())
+        log.msg('Data sent {}'.format(data))
+
+    def connectionLost(self, reason):
+        log.msg('Lost connection because {}'.format(reason))
 
 
-myCommandInterpreter = None
-Cmd=Cmd()
-reactor.connectTCP("localhost", 5678, CommandInterpreterFactory())
-stdio.StandardIO(InputReader())
-reactor.callInThread(Cmd.cmdloop())
-reactor.run()
+
+class EchoClientFactory(ClientFactory):
+    def startedConnecting(self, connector):
+        log.msg('Started to connect.')
+
+    def buildProtocol(self, addr):
+        log.msg('Connected.')
+        return EchoClientProtocol()
+
+    def clientConnectionLost(self, connector, reason):
+        log.msg('Lost connection. Reason: {}'.format(reason))
+
+    def clientConnectionFailed(self, connector, reason):
+        log.msg('Lost failed. Reason: {}'.format(reason))
+
+
+def main():
+    log.startLogging(sys.stdout)
+    log.msg('Start your engines...')
+    stdio.StandardIO(Echo())
+    reactor.connectTCP('localhost', 5678, EchoClientFactory())
+    reactor.run()
+
+
+if __name__ == '__main__':
+    main()
