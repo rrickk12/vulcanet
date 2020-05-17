@@ -1,11 +1,17 @@
-import sys, cmd
+import sys
+from cmd import Cmd
 from twisted.python import log
 from twisted.internet import reactor, stdio
-from twisted.internet.protocol import ServerFactory, ClientFactory, Protocol
+from twisted.internet.protocol import ServerFactory, Factory, Protocol
 from twisted.protocols.basic import LineReceiver
 from os import linesep
 
-class Cmd(cmd.Cmd):
+class Command(Cmd):
+
+    def do_test(self, arg):
+        call_id = arg.split()[0]
+        reactor.callFromThread(on_main_thread,call_id)
+        
 
     def do_call(self, arg):
         call_id = arg.split()[0]
@@ -39,12 +45,17 @@ class Echo(LineReceiver):
         self.transport.write(b'>>> ')
 
 class EchoClientProtocol(Protocol):
+
+    def __init__(self, dataJSON = None):
+        self.dataJSON = dataJSON
+
     def dataReceived(self, data):
         log.msg('Data received {}'.format(data))
         self.transport.loseConnection()
 
     def connectionMade(self):
-        data = 'Hello, Server!'
+        log.msg('Data sent {}'.format(self))
+        data = self.dataJSON
         self.transport.write(data.encode())
         log.msg('Data sent {}'.format(data))
 
@@ -53,13 +64,19 @@ class EchoClientProtocol(Protocol):
 
 
 
-class EchoClientFactory(ClientFactory):
+class EchoClientFactory(Factory):
+    protocol = EchoClientProtocol
+
+    def __init__ (self, dataJSON=None):
+        self.dataJSON = dataJSON
+
     def startedConnecting(self, connector):
         log.msg('Started to connect.')
 
     def buildProtocol(self, addr):
-        log.msg('Connected.')
-        return EchoClientProtocol()
+        log.msg('Connected {}'.format(self.dataJSON))
+		
+        return EchoClientProtocol(self.dataJSON)
 
     def clientConnectionLost(self, connector, reason):
         log.msg('Lost connection. Reason: {}'.format(reason))
@@ -67,12 +84,14 @@ class EchoClientFactory(ClientFactory):
     def clientConnectionFailed(self, connector, reason):
         log.msg('Lost failed. Reason: {}'.format(reason))
 
+def on_main_thread(data):
+	reactor.connectTCP('localhost', 5678, EchoClientFactory(data))
 
 def main():
+
     log.startLogging(sys.stdout)
     log.msg('Start your engines...')
-    stdio.StandardIO(Echo())
-    reactor.connectTCP('localhost', 5678, EchoClientFactory())
+    reactor.callInThread(Command().cmdloop)
     reactor.run()
 
 
