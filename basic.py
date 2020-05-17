@@ -83,7 +83,9 @@ class Cmd(cmd.Cmd):
             deliver_call(call)
 
 
-operatorDict = {"A": "available", "B": "available"}
+operatorDict = {
+    "A": "available",
+    "B": "available"}
 callDict = {}
 calls = {}
 callQueue = []
