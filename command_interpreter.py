@@ -15,34 +15,23 @@ class Command(Cmd):
 
     def do_call(self, arg):
         call_id = arg.split()[0]
-        request = json.dumps({'command': 'call', 'id': call_id})
-        return request
+        request = ("{'command': 'call', 'id': "+call_id+"}")
+        reactor.callFromThread(on_main_thread,request)
 
     def do_answer(self, arg):
         operator = arg.split()[0]
-        request =  json.dumps({'command': 'answer', 'id': operator})
-        return request
+        request = ("{'command': 'answer', 'id': "+operator+"}")
+        reactor.callFromThread(on_main_thread,request)
 
     def do_reject(self, arg):
         operator = arg.split()[0]
-        request = json.dumps({'command': 'reject', 'id': operator})
-        return request
+        request = ("{'command': 'reject', 'id': "+operator+"}")
+        reactor.callFromThread(on_main_thread,request)
 
     def do_hangup(self, arg):
         call=arg.split()[0]
-        request = json.dumps({'command': 'hangup', 'id': call})
-        return request
-
-class Echo(LineReceiver):
-
-    delimiter = linesep.encode("ascii")
-
-    def connectionMade(self):
-        self.transport.write(b'>>> ')
-
-    def lineReceived(self, line):
-        self.sendLine(b'Echo: ' + line)
-        self.transport.write(b'>>> ')
+        request = ("{'command': 'hangup', 'id': "+call+"}")
+        reactor.callFromThread(on_main_thread,request)
 
 class EchoClientProtocol(Protocol):
 
