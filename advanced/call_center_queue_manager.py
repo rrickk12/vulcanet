@@ -16,9 +16,10 @@ class Call():
         self.operator = operator
 
 class ServerProtocol(Protocol):
-    response = {}
-
-    def deliver_call(call):
+    
+	
+    def deliver_call(self,call):
+        response = {}
         operator = operatorStack.pop()
         call.set_operator(operator)
         operatorDict[operator]= "ringing"
@@ -29,6 +30,7 @@ class ServerProtocol(Protocol):
         self.transport.write(json.dumps(response).encode())
 
     def dataReceived(self, data):
+        response = {}
         #log.msg('Data received {}'.format(data))
         dataJSON = json.loads(data.decode())
         if dataJSON["command"] == 'call':
@@ -89,14 +91,13 @@ class ServerProtocol(Protocol):
             if not callQueue == []:
                 call = callQueue[0]
                 callQueue.remove(call)
-                deliver_call(call)
-        #self.transport.write(b"transportando alguma coisa")
+                self.deliver_call(call)
 
-    def connectionMade(self):
-        log.msg('Client connection from {}'.format(self.transport.getPeer()))
+    #def connectionMade(self):
+    #    log.msg('Client connection from {}'.format(self.transport.getPeer()))
 
-    def connectionLost(self, reason):
-        log.msg('Lost connection because {}'.format(reason))
+    #def connectionLost(self, reason):
+    #    log.msg('Lost connection because {}'.format(reason))
 
 
 class ServerFactory(ServerFactory):
@@ -115,7 +116,7 @@ operatorStack.append("B")
 operatorStack.append("A")
 log.startLogging(sys.stdout)
 log.msg('Start your engines...')
-reactor.listenTCP(5678, EchoServerFactory())
+reactor.listenTCP(5678, ServerFactory())
 reactor.run()
 
 
