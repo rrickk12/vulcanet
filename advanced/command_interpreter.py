@@ -48,7 +48,8 @@ class ClientProtocol(Protocol):
         self.transport.write(data.encode())
 #        log.msg('Data sent {}'.format(data))
 
-#    def connectionLost(self, reason):
+    def connectionLost(self, reason):
+        pass
 #        log.msg('Lost connection because {}'.format(reason))
 
 #This function is the factory that spawns the client process
@@ -58,20 +59,23 @@ class ClientFactory(Factory):
     def __init__ (self, dataJSON=None):
         self.dataJSON = dataJSON
 
-#    def startedConnecting(self, connector):
-#        log.msg('Started to connect.')
+    def startedConnecting(self, connector):
+        #log.msg('Started to connect.')
+        pass
 
     #build the client that will connect to the server
     def buildProtocol(self, addr):
-#        log.msg('Connected {}'.format(self.dataJSON))
+        #log.msg('Connected {}'.format(self.dataJSON))
 		
         return ClientProtocol(self.dataJSON)
 
-#    def clientConnectionLost(self, connector, reason):
-#        log.msg('Lost connection. Reason: {}'.format(reason))
+    def clientConnectionLost(self, connector, reason):
+        pass
+        #log.msg('Lost connection. Reason: {}'.format(reason))
 
-#    def clientConnectionFailed(self, connector, reason):
-#        log.msg('Lost failed. Reason: {}'.format(reason))
+    def clientConnectionFailed(self, connector, reason):
+        pass
+        #log.msg('Lost failed. Reason: {}'.format(reason))
 
 #this function recives the data parsed by the cmd and create the tcp connection between the client and server
 def connect(data):
@@ -79,8 +83,8 @@ def connect(data):
 
 def main():
 
-    log.startLogging(sys.stdout)
-    log.msg('Start your engines...')
+    #log.startLogging(sys.stdout)
+    #log.msg('Start your engines...')
     #the cmd.loop and reactor.run is a blocking instruction we run cmd in another thread
     reactor.callInThread(Command().cmdloop)
     reactor.run()

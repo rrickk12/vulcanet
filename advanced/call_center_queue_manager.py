@@ -114,8 +114,8 @@ callQueue = []
 operatorStack = []
 operatorStack.append("B")
 operatorStack.append("A")
-log.startLogging(sys.stdout)
-log.msg('Start your engines...')
+#log.startLogging(sys.stdout)
+#log.msg('Start your engines...')
 reactor.listenTCP(5678, ServerFactory())
 reactor.run()
 
